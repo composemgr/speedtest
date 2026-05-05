@@ -47,8 +47,8 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/config/speedtest` - Data storage
-- `./rootfs/data/speedtest` - Data storage
+- `./volumes/config/speedtest` - Data storage
+- `./volumes/data/speedtest` - Data storage
 
 ## 🔍 Logging
 
