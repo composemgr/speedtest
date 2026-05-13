@@ -17,12 +17,16 @@ services:
     logging: *default-logging
     networks:
       - speedtest
+      - proxy
+      - cloudflare
     ports:
       - "172.17.0.1:8102:80"
     environment:
       TZ: ${TZ:-America/New_York}
       TITLE: ${SPEEDTEST_TITLE:-LibreSpeed}
       TELEMETRY: false
+      CONTAINER_NAME: speedtest-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
     volumes:
       - ./volumes/data/speedtest:/data
     healthcheck:
@@ -30,8 +34,28 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://speedtest-app:80'
+      - 'cloudflare.hostname=speedtest.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.speedtest-app.entrypoints=http'
+      - 'traefik.http.routers.speedtest-app-secure.tls=true'
+      - 'traefik.http.routers.speedtest-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.speedtest-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.speedtest-app.middlewares=speedtest-app-https-redirect'
+      - 'traefik.http.routers.speedtest-app-secure.entrypoints=https'
+      - 'traefik.http.routers.speedtest-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.speedtest-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.speedtest-app-secure.service=speedtest-app'
+      - 'traefik.http.services.speedtest-app.loadbalancer.server.port=80'
 
 networks:
   speedtest:
     name: speedtest
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
