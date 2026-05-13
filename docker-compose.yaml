@@ -1,5 +1,6 @@
 # nginx proxy address - http://172.17.0.1:8102
 
+name: speedtest
 x-logging: &default-logging
   driver: json-file
   options:
@@ -7,28 +8,30 @@ x-logging: &default-logging
     max-file: "1"
 
 services:
-  speedtest:
-    image: speedtest/speedtest:latest
+  app:
+    image: adolfintel/speedtest:latest
+    pull_policy: always
     container_name: speedtest-app
-    restart: unless-stopped
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
     logging: *default-logging
     networks:
       - speedtest
     ports:
-      - "8102:8102"
+      - "172.17.0.1:8102:80"
     environment:
       TZ: ${TZ:-America/New_York}
-      PUID: ${SERVICE_USER:-1000}
-      PGID: ${SERVICE_GROUP:-1000}
+      TITLE: ${SPEEDTEST_TITLE:-LibreSpeed}
+      TELEMETRY: false
     volumes:
-      - ./volumes/config/speedtest:/config
       - ./volumes/data/speedtest:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8102"]
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3
 
 networks:
   speedtest:
+    name: speedtest
     external: false
